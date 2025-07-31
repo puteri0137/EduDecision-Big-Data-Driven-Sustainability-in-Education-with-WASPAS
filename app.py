@@ -79,3 +79,16 @@ if uploaded_file:
         # Plot the ranking
         st.bar_chart(decision_matrix_df.set_index('Alternative')['WASPAS Score'].sort_values(ascending=False))
 
+        # Download button for the final scores as CSV
+        @st.cache
+        def convert_df(df):
+            return df.to_csv(index=False).encode('utf-8')
+
+        csv = convert_df(decision_matrix_df)
+        st.download_button(
+            label="Download Final Results as CSV",
+            data=csv,
+            file_name="waspas_results.csv",
+            mime="text/csv"
+        )
+
