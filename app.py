@@ -1,9 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 
-# Function to normalize data using vector normalization
+# Function to normalize the data
 def normalize_data(df):
     norm_df = df.copy()
     for col in df.columns[1:]:  # Skip the first column (alternatives)
@@ -36,23 +35,25 @@ st.title('SustainRank: Big Data-Driven Educational Sustainability with WASPAS')
 
 st.sidebar.header("Upload Data Files")
 
-# File uploader for criteria weights
+# File uploader for criteria weights in CSV format
 weights_file = st.sidebar.file_uploader("Upload Weights CSV", type=["csv"])
 if weights_file:
     weights_df = pd.read_csv(weights_file)
+    st.sidebar.write("Weights File:")
     st.sidebar.write(weights_df)
 
-# File uploader for the decision matrix
+# File uploader for the decision matrix in CSV format
 decision_file = st.sidebar.file_uploader("Upload Decision Matrix CSV", type=["csv"])
 if decision_file:
     decision_df = pd.read_csv(decision_file)
+    st.write("Decision Matrix:")
     st.write(decision_df)
 
     # Normalize the data
     norm_df = normalize_data(decision_df)
 
     # Get the user-input weights
-    weights = weights_df.iloc[0, 1:].values
+    weights = weights_df.iloc[0, 1:].values  # Assuming the weights are in the first row
 
     # Calculate the weighted normalized matrix
     weighted_norm_df = weighted_normalized(norm_df, weights)
@@ -64,13 +65,14 @@ if decision_file:
 
     # Calculate distances from PIS and NIS
     pis_dist, nis_dist = euclidean_distance(weighted_norm_df, pis, nis)
-
+    
     # Calculate the WASPAS score
     waspas_scores = waspas_score(pis_dist, nis_dist)
-
+    
     # Add the scores to the dataframe
     decision_df["WASPAS Score"] = waspas_scores
     st.write("Final WASPAS Scores", decision_df)
 
     # Plot the ranking
     st.bar_chart(decision_df.set_index('Alternative')['WASPAS Score'].sort_values(ascending=False))
+
