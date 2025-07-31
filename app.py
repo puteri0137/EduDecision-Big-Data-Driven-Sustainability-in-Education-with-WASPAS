@@ -33,46 +33,49 @@ def waspas_score(pis_dist, nis_dist, lambda_val=0.5):
 # Title and input for the Streamlit app
 st.title('SustainRank: Big Data-Driven Educational Sustainability with WASPAS')
 
-st.sidebar.header("Upload Data Files")
+st.sidebar.header("Upload Data File")
 
-# File uploader for criteria weights in CSV format
-weights_file = st.sidebar.file_uploader("Upload Weights CSV", type=["csv"])
-if weights_file:
-    weights_df = pd.read_csv(weights_file)
-    st.sidebar.write("Weights File:")
-    st.sidebar.write(weights_df)
-
-# File uploader for the decision matrix in CSV format
-decision_file = st.sidebar.file_uploader("Upload Decision Matrix CSV", type=["csv"])
-if decision_file:
-    decision_df = pd.read_csv(decision_file)
-    st.write("Decision Matrix:")
-    st.write(decision_df)
-
-    # Normalize the data
-    norm_df = normalize_data(decision_df)
-
-    # Get the user-input weights
-    weights = weights_df.iloc[0, 1:].values  # Assuming the weights are in the first row
-
-    # Calculate the weighted normalized matrix
-    weighted_norm_df = weighted_normalized(norm_df, weights)
-    st.write("Weighted Normalized Matrix", weighted_norm_df)
-
-    # Define impacts for each criterion (e.g., "+" for benefit, "-" for cost)
-    impacts = ["+" for _ in range(weighted_norm_df.shape[1])]  # Default impacts as benefit
-    pis, nis = pis_nis(weighted_norm_df, impacts[0])
-
-    # Calculate distances from PIS and NIS
-    pis_dist, nis_dist = euclidean_distance(weighted_norm_df, pis, nis)
+# File uploader for the combined weights and decision matrix in Excel format
+uploaded_file = st.sidebar.file_uploader("Upload Excel File", type=["xlsx"])
+if uploaded_file:
+    # Load the Excel file
+    excel_df = pd.read_excel(uploaded_file, sheet_name=None)
     
-    # Calculate the WASPAS score
-    waspas_scores = waspas_score(pis_dist, nis_dist)
-    
-    # Add the scores to the dataframe
-    decision_df["WASPAS Score"] = waspas_scores
-    st.write("Final WASPAS Scores", decision_df)
+    # Assuming the first sheet contains the Decision Matrix and second sheet contains Weights
+    decision_matrix_df = excel_df.get('Decision Matrix')
+    weights_df = excel_df.get('Weights')
 
-    # Plot the ranking
-    st.bar_chart(decision_df.set_index('Alternative')['WASPAS Score'].sort_values(ascending=False))
+    if decision_matrix_df is not None and weights_df is not None:
+        st.write("Decision Matrix:")
+        st.write(decision_matrix_df)
+
+        st.write("Weights Data:")
+        st.write(weights_df)
+
+        # Normalize the data
+        norm_df = normalize_data(decision_matrix_df)
+
+        # Get the user-input weights (assume weights are in the second column of the weights data)
+        weights = weights_df.iloc[:, 1].values
+
+        # Calculate the weighted normalized matrix
+        weighted_norm_df = weighted_normalized(norm_df, weights)
+        st.write("Weighted Normalized Matrix", weighted_norm_df)
+
+        # Define impacts for each criterion (e.g., "+" for benefit, "-" for cost)
+        impacts = ["+" for _ in range(weighted_norm_df.shape[1])]  # Default impacts as benefit
+        pis, nis = pis_nis(weighted_norm_df, impacts[0])
+
+        # Calculate distances from PIS and NIS
+        pis_dist, nis_dist = euclidean_distance(weighted_norm_df, pis, nis)
+        
+        # Calculate the WASPAS score
+        waspas_scores = waspas_score(pis_dist, nis_dist)
+        
+        # Add the scores to the dataframe
+        decision_matrix_df["WASPAS Score"] = waspas_scores
+        st.write("Final WASPAS Scores", decision_matrix_df)
+
+        # Plot the ranking
+        st.bar_chart(decision_matrix_df.set_index('Alternative')['WASPAS Score'].sort_values(ascending=False))
 
